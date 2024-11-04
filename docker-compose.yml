@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  ffmpeg:
+    image: jrottenberg/ffmpeg:latest
+    volumes:
+      - C:/Users/Darsh/Desktop/Project/VideoStream/VideoStream/VideoStream/videos_hsl:/app/input
+      - C:/Users/Darsh/Desktop/Project/VideoStream/VideoStream/VideoStream/videos_hsl:/app/output
+    entrypoint: ["tail", "-f", "/dev/null"]

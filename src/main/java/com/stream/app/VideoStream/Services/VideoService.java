@@ -3,6 +3,8 @@ package com.stream.app.VideoStream.Services;
 import com.stream.app.VideoStream.Model.Video;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.sound.midi.Patch;
+import java.nio.file.Path;
 import java.util.List;
 
 public interface VideoService {
@@ -18,5 +20,8 @@ public interface VideoService {
 
 //    get all video
     List<Video> getAllVideos();
+
+    //video processing
+    String processVideo(String videoId);
 
 }

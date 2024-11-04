@@ -1,9 +1,11 @@
 package com.stream.app.VideoStream.Controllers;
 
 
+import com.stream.app.VideoStream.AppConstants;
 import com.stream.app.VideoStream.Model.Video;
 import com.stream.app.VideoStream.Payload.CustomMessage;
 import com.stream.app.VideoStream.Services.VideoService;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -107,18 +109,28 @@ public class VideoController {
 
         long rangeStart;
         long rangeEnd;
+
+
         String[]ranges=  range.replace("bytes=","").split("-");
         rangeStart=Long.parseLong(ranges[0]);
-            if(ranges.length>1) {
-                rangeEnd = Long.parseLong(ranges[1]);
-            }else{
-                    rangeEnd=fileLength-1;
-            }
+        rangeEnd=rangeStart + AppConstants.CHUNK_SIZE-1;
+
+        if(rangeEnd>=fileLength){
+            rangeEnd=fileLength-1;
+        }
 
 
-            if(rangeEnd>fileLength-1){
-                rangeEnd=fileLength-1;
-            }
+
+//            if(ranges.length>1) {
+//                rangeEnd = Long.parseLong(ranges[1]);
+//            }else{
+//                    rangeEnd=fileLength-1;
+//            }
+//
+//
+//            if(rangeEnd>fileLength-1){
+//                rangeEnd=fileLength-1;
+//            }
 
         System.out.println("start"+rangeStart);
         System.out.println("end"+rangeEnd);
@@ -129,22 +141,36 @@ public class VideoController {
 
                 inputStream.skip(rangeStart);
 
+
+
+                long contentLength=rangeEnd-rangeStart+1;
+
+                byte[] data=new byte[(int) contentLength];
+                inputStream.read(data,0,data.length);
+
+                HttpHeaders httpHeaders=new HttpHeaders();
+                httpHeaders.add("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+fileLength);
+                httpHeaders.add("Cache-Control", "no-cache, no-store, must-revalidate");
+                httpHeaders.add("Pragma", "no-cache");
+                httpHeaders.add("Expires", "0");
+                httpHeaders.add("X-Content-Type-Options", "nosniff");
+                httpHeaders.setContentLength(contentLength);
+
+                return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).headers(httpHeaders).contentType(MediaType
+                                .parseMediaType(contentType))
+                        .body(new ByteArrayResource(data));
+
             } catch (Exception e) {
                 return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
-            long contentLength=rangeEnd-rangeStart+1;
 
-            HttpHeaders httpHeaders=new HttpHeaders();
-            httpHeaders.add("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+fileLength);
-        httpHeaders.add("Cache-Control", "no-cache, no-store, must-revalidate");
-        httpHeaders.add("Pragma", "no-cache");
-        httpHeaders.add("Expires", "0");
-        httpHeaders.add("X-Content-Type-Options", "nosniff");
-        httpHeaders.setContentLength(contentLength);
-
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).headers(httpHeaders).contentType(MediaType.parseMediaType(contentType))
-                .body(new InputStreamResource(inputStream));
 
 
     }
+
+
+
+//server hls playlist implementation pending using get
+//    also implementing the segments
+
 }

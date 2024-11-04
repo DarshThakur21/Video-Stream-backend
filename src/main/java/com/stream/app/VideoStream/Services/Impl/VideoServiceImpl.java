@@ -90,6 +90,8 @@ public class VideoServiceImpl implements VideoService {
             video.setFilePath(paths.toString());
 
 
+//            processVideo(video.getVideoId());
+
            return videoRepo.save(video);
 
         }catch (IOException e){
@@ -120,7 +122,7 @@ public class VideoServiceImpl implements VideoService {
     }
 
     @Override
-    public String processVideo(String videoId, MultipartFile multipartFile) {
+    public String processVideo(String videoId) {
         Video video=this.get(videoId);
         String filePath=video.getFilePath();
 //
@@ -157,18 +159,18 @@ public class VideoServiceImpl implements VideoService {
         Files.createDirectories(outputpath);
 
 
-//            String ffmpegCmd=String.format(
-//                    "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%3d.ts\" \"%s/index.m3u8\" ",
-//                    vidPath,outputpath,outputpath
-//            );
-
-//
-
-
-            String ffmpegCmd = String.format(
-                    "docker exec videostream-ffmpeg-1 ffmpeg -i \"/app/input/%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"/app/output/%s_segment_%%3d.ts\" \"/app/output/%s_index.m3u8\"",
-                    vidPath, outputpath, outputpath
+            String ffmpegCmd=String.format(
+                    "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%3d.ts\" \"%s/index.m3u8\" ",
+                    vidPath,outputpath,outputpath
             );
+
+
+
+
+//            String ffmpegCmd = String.format(
+//                    "docker exec videostream-ffmpeg-1 ffmpeg -i \"/app/input/%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"/app/output/%s_segment_%%3d.ts\" \"/app/output/%s_index.m3u8\"",
+//                    vidPath, outputpath, outputpath
+//            );
 
             System.out.println(ffmpegCmd);
             ProcessBuilder processBuilder=new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);
