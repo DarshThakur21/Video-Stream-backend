@@ -27,9 +27,23 @@ public class VideoServiceImpl implements VideoService {
     @Value("${files.video}")
     String DIR;
 
+    @Value("${file.video.hsl}")
+    String HSL_DIR;
+
     @PostConstruct
     public void init(){
         File file=new File(DIR);
+//        File filehsl=new File(HSL_DIR);
+//
+//
+//        if(!filehsl.exists()){
+//            filehsl.mkdir();
+//        }
+        try {
+            Files.createDirectories(Paths.get(HSL_DIR));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         if(!file.exists()){
             file.mkdir();
@@ -104,4 +118,84 @@ public class VideoServiceImpl implements VideoService {
        return videoRepo.findAll();
 //        return List.of();
     }
+
+    @Override
+    public String processVideo(String videoId, MultipartFile multipartFile) {
+        Video video=this.get(videoId);
+        String filePath=video.getFilePath();
+//
+////        path to store data
+        Path vidPath=Paths.get(filePath);
+
+//        String output360P=HSL_DIR+videoId+"/360p/";
+//        String output720P=HSL_DIR+videoId+"/720p/";
+//        String output1080P=HSL_DIR+videoId+"/1080p/";
+
+
+        try {
+//            Files.createDirectories(Paths.get(output360P));
+//            Files.createDirectories(Paths.get(output720P));
+//            Files.createDirectories(Paths.get(output1080P));
+
+            //ffmpeg command
+//            StringBuilder ffmpegCmd=new StringBuilder();
+
+//            ffmpegCmd.append("ffmpeg -i")
+//                    .append(vidPath.toString())
+//                    .append("")
+//                    .append("-map 0:v -map 0:a -s:v:0 640x360 -b:v:0 800k ")
+//                    .append("-map 0:v -map 0:a -s:v:1 1280x720 -b:v:1 2800k ")
+//                    .append("-map 0:v -map 0:a -s:v:2 1920x1080 -b:v:2 5000k ")
+//                    .append("-var_stream_map \"v:0,a:0 v:1,a:0 v:2,a:0\" ")
+//                    .append("-master_pl_name").append(HSL_DIR).append(videoId).append("/master.m3u8 ")
+//                    .append("-f hls -hls_time 10 -hls_list_size 0 ")
+//                    .append("-hls_segment_filename \"").append(HSL_DIR).append()
+
+
+        Path outputpath=Paths.get(HSL_DIR,videoId);
+
+        Files.createDirectories(outputpath);
+
+
+//            String ffmpegCmd=String.format(
+//                    "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%3d.ts\" \"%s/index.m3u8\" ",
+//                    vidPath,outputpath,outputpath
+//            );
+
+//
+
+
+            String ffmpegCmd = String.format(
+                    "docker exec videostream-ffmpeg-1 ffmpeg -i \"/app/input/%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"/app/output/%s_segment_%%3d.ts\" \"/app/output/%s_index.m3u8\"",
+                    vidPath, outputpath, outputpath
+            );
+
+            System.out.println(ffmpegCmd);
+            ProcessBuilder processBuilder=new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);
+
+            processBuilder.inheritIO();
+            Process process=processBuilder.start();
+
+
+            int exit=process.waitFor();
+            if (exit!=0){
+                throw new RuntimeException("video process failed!!"+exit);
+
+
+            }
+            return videoId;
+
+
+
+
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("failed vdo processing");
+        }
+
+
+
+
+    }
+
+
 }
